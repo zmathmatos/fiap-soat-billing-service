@@ -4,7 +4,6 @@ Microsserviço de **Orçamento e Pagamento** da oficina mecânica (Fase 4).
 
 ## Responsabilidades
 
-- Catálogo de peças (`parts`) e serviços (`services`) com preços;
 - Geração e envio de orçamentos para aprovação do cliente;
 - Aprovação/rejeição de orçamento (`/quotations/:serviceOrderNumber/approval` e `/rejection`);
 - Registro e verificação de pagamentos via integração com **Mercado Pago** (webhook);

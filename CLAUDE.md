@@ -47,10 +47,10 @@ Dependencies point inward only: `interface → application → domain ← infras
 
 1. **Receive service order**: `fiap-soat-os-service` POSTs a service order with status `"Aguardando aprovação"` to this service's REST endpoint.
 2. **Generate quotation**: persist quotation to MongoDB and send an email via nodemailer (Mailhog for local dev).
-3. **Quotation rejected**: PATCH `fiap-soat-os-service` to set status → `"Finalizado"`.
+3. **Quotation rejected**: send the `quotation.rejected` event to `fiap-soat-os-service/` to set status → `"Finalizado"`.
 4. **Quotation approved**: send payment email to customer; create a Mercado Pago payment preference.
-5. **Payment confirmed** (Mercado Pago webhook): persist the full Mercado Pago payment payload to MongoDB, then PATCH `fiap-soat-os-service` to set status → `"Em execução"`.
-6. **Payment events published**: `payment.approved`, `payment.failed`, `payment.refunded` via SNS/SQS.
+5. **Payment confirmed** (Mercado Pago webhook): persist the full Mercado Pago payment payload to MongoDB, then send the `payment.approved` event to `fiap-soat-os-service` to set status → `"Em execução"`.
+6. **Payment events published**: `payment.approved` and `payment.failed` via SNS/SQS. If the `payment.faied` is send to `fiap-soat-os-service`, then it will update the status to `Finalizado`.
 
 ## Key Integrations
 
