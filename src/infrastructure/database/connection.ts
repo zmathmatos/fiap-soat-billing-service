@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { env } from './env';
+import { env } from '../../shared/config/env';
 
 export async function connectDatabase(): Promise<void> {
   await mongoose.connect(env.mongoUri);

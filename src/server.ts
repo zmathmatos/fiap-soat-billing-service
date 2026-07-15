@@ -1,5 +1,5 @@
 import { createApp } from './app';
-import { connectDatabase } from './shared/config/database';
+import { connectDatabase } from './infrastructure/database/connection';
 import { env } from './shared/config/env';
 
 async function bootstrap(): Promise<void> {
