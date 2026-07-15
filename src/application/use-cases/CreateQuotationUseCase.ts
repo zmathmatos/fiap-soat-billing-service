@@ -21,6 +21,7 @@ export class CreateQuotationUseCase {
       html: `
         <h2>Olá!</h2>
         <p>Seu orçamento foi gerado com sucesso.</p>
+        <p><strong>OS nº:</strong> ${dto.serviceOrderNumber}</p>
         <p><strong>Descrição:</strong> ${dto.description}</p>
         <p><strong>Valor:</strong> R$ ${dto.amount.toFixed(2)}</p>
         <p><strong>ID do orçamento:</strong> ${quotation.id}</p>
@@ -30,6 +31,7 @@ export class CreateQuotationUseCase {
     return {
       id: quotation.id,
       serviceOrderId: quotation.serviceOrderId,
+      serviceOrderNumber: quotation.serviceOrderNumber,
       customerId: quotation.customerId,
       customerEmail: quotation.customerEmail,
       description: quotation.description,
