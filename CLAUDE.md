@@ -64,6 +64,10 @@ Dependencies point inward only: `interface → application → domain ← infras
 
 Mercado Pago integration docs: https://www.mercadopago.com.br/developers/pt
 
+## API Documentation
+
+API documentation is maintained as a **Postman collection** (`postman_collection.json`) at the root of this repository. Keep the collection up to date whenever endpoints are added or changed — it is the authoritative reference for request/response shapes, auth headers, and example payloads.
+
 ## Testing Requirements
 
 - **Minimum 80% coverage** enforced in CI.

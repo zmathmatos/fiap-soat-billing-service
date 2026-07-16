@@ -1,0 +1,204 @@
+{
+  "info": {
+    "name": "FIAP SOAT Billing Service",
+    "description": "API documentation for the fiap-soat-billing-service. Handles quotation lifecycle (create, approve, reject) and processes MercadoPago payment webhooks.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "Base URL of the billing service"
+    },
+    {
+      "key": "quotationId",
+      "value": "",
+      "type": "string",
+      "description": "UUID of a quotation — populated automatically by the 'Create Quotation' request via a test script"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Returns service liveness status. Used by Kubernetes readiness/liveness probes."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"ok\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Quotations",
+      "item": [
+        {
+          "name": "Create Quotation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('quotationId', body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/quotations",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotations"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Creates a new quotation with status `pending` and sends a quotation email to the customer via nodemailer.\n\nCalled by `fiap-soat-os-service` when a service order is received with status `Aguardando aprovação`.\n\nOn success the response `id` is stored in the `quotationId` collection variable."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"pending\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Missing required fields\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Approve Quotation",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/quotations/{{quotationId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotations", "{{quotationId}}", "approve"]
+            },
+            "description": "Approves a pending quotation.\n\n1. Sets quotation status → `approved`.\n2. Creates a MercadoPago payment preference.\n3. Persists a `Payment` record with status `pending`.\n4. Sends a payment link email to the customer."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"approved\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:05:00.000Z\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Quotation not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reject Quotation",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/quotations/{{quotationId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["quotations", "{{quotationId}}", "reject"]
+            },
+            "description": "Rejects a pending quotation.\n\n1. Sets quotation status → `rejected`.\n2. Calls `fiap-soat-os-service` to update the service order status → `Finalizado`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"rejected\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:06:00.000Z\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Quotation not found\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "MercadoPago Payment Webhook",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/mercadopago",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks", "mercadopago"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"payment\",\n  \"data\": {\n    \"id\": \"MP-PAYMENT-ID-12345\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Receives payment status notifications from MercadoPago.\n\nOnly events with `type: \"payment\"` are processed; all others are acknowledged and ignored.\n\n**On `approved` status:**\n- Sets `Payment` status → `approved`.\n- Publishes `payment.approved` event via SNS.\n- Calls `fiap-soat-os-service` to set service order status → `Em execução`.\n\n**On `rejected` / `cancelled` status:**\n- Sets `Payment` status → `failed`.\n- Publishes `payment.failed` event via SNS.\n- `fiap-soat-os-service` will set service order status → `Finalizado`.\n\nThis endpoint must be publicly reachable by MercadoPago. In local dev, use a tunnel (e.g., ngrok) and configure the webhook URL in the MercadoPago developer dashboard."
+          },
+          "response": [
+            {
+              "name": "200 OK — event accepted",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"received\": true\n}"
+            },
+            {
+              "name": "422 Unprocessable Entity — missing external_reference",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Missing external_reference in payment\"\n}"
+            },
+            {
+              "name": "404 Not Found — payment record not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Payment not found\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
