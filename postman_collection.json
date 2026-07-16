@@ -99,7 +99,7 @@
         {
           "name": "Approve Quotation",
           "request": {
-            "method": "PATCH",
+            "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/quotations/{{quotationId}}/approve",
               "host": ["{{baseUrl}}"],
@@ -127,7 +127,7 @@
         {
           "name": "Reject Quotation",
           "request": {
-            "method": "PATCH",
+            "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/quotations/{{quotationId}}/reject",
               "host": ["{{baseUrl}}"],
