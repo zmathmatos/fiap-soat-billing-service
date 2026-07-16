@@ -7,6 +7,7 @@ export class MongoQuotationRepository implements IQuotationRepository {
     await QuotationModel.create({
       id: quotation.id,
       serviceOrderId: quotation.serviceOrderId,
+      serviceOrderNumber: quotation.serviceOrderNumber,
       customerId: quotation.customerId,
       customerEmail: quotation.customerEmail,
       description: quotation.description,
@@ -23,6 +24,7 @@ export class MongoQuotationRepository implements IQuotationRepository {
     return new Quotation({
       id: doc.id,
       serviceOrderId: doc.serviceOrderId,
+      serviceOrderNumber: doc.serviceOrderNumber,
       customerId: doc.customerId,
       customerEmail: doc.customerEmail,
       description: doc.description,
@@ -39,6 +41,7 @@ export class MongoQuotationRepository implements IQuotationRepository {
     return new Quotation({
       id: doc.id,
       serviceOrderId: doc.serviceOrderId,
+      serviceOrderNumber: doc.serviceOrderNumber,
       customerId: doc.customerId,
       customerEmail: doc.customerEmail,
       description: doc.description,

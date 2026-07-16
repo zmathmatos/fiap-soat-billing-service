@@ -5,6 +5,7 @@ export type QuotationStatus = 'pending' | 'approved' | 'rejected';
 export interface QuotationProps {
   id?: string;
   serviceOrderId: string;
+  serviceOrderNumber: number;
   customerId: string;
   customerEmail: string;
   description: string;
@@ -17,6 +18,7 @@ export interface QuotationProps {
 export class Quotation {
   readonly id: string;
   readonly serviceOrderId: string;
+  readonly serviceOrderNumber: number;
   readonly customerId: string;
   readonly customerEmail: string;
   readonly description: string;
@@ -28,6 +30,7 @@ export class Quotation {
   constructor(props: QuotationProps) {
     this.id = props.id || uuidv4();
     this.serviceOrderId = props.serviceOrderId;
+    this.serviceOrderNumber = props.serviceOrderNumber;
     this.customerId = props.customerId;
     this.customerEmail = props.customerEmail;
     this.description = props.description;
