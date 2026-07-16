@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000",
+      "value": "http://localhost:3001",
       "type": "string",
       "description": "Base URL of the billing service"
     },
@@ -74,7 +74,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00\n}",
+              "raw": "{\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"serviceOrderNumber\": 1042,\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00\n}",
               "options": { "raw": { "language": "json" } }
             },
             "description": "Creates a new quotation with status `pending` and sends a quotation email to the customer via nodemailer.\n\nCalled by `fiap-soat-os-service` when a service order is received with status `Aguardando aprovação`.\n\nOn success the response `id` is stored in the `quotationId` collection variable."
@@ -85,7 +85,7 @@
               "status": "Created",
               "code": 201,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"pending\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:00:00.000Z\"\n}"
+              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"serviceOrderNumber\": 1042,\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"pending\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:00:00.000Z\"\n}"
             },
             {
               "name": "400 Bad Request",
@@ -99,7 +99,7 @@
         {
           "name": "Approve Quotation",
           "request": {
-            "method": "PATCH",
+            "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/quotations/{{quotationId}}/approve",
               "host": ["{{baseUrl}}"],
@@ -113,7 +113,7 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"approved\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:05:00.000Z\"\n}"
+              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"serviceOrderNumber\": 1042,\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"approved\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:05:00.000Z\"\n}"
             },
             {
               "name": "404 Not Found",
@@ -127,7 +127,7 @@
         {
           "name": "Reject Quotation",
           "request": {
-            "method": "PATCH",
+            "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/quotations/{{quotationId}}/reject",
               "host": ["{{baseUrl}}"],
@@ -141,7 +141,7 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"rejected\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:06:00.000Z\"\n}"
+              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"serviceOrderNumber\": 1042,\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"rejected\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:06:00.000Z\"\n}"
             },
             {
               "name": "404 Not Found",

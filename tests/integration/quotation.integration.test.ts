@@ -24,6 +24,7 @@ describe('MongoQuotationRepository', () => {
     const repo = new MongoQuotationRepository();
     const quotation = new Quotation({
       serviceOrderId: 'so-1',
+      serviceOrderNumber: 1001,
       customerId: 'c-1',
       customerEmail: 'test@example.com',
       description: 'Fix brakes',
@@ -42,6 +43,7 @@ describe('MongoQuotationRepository', () => {
     const repo = new MongoQuotationRepository();
     const quotation = new Quotation({
       serviceOrderId: 'so-1',
+      serviceOrderNumber: 1001,
       customerId: 'c-1',
       customerEmail: 'test@example.com',
       description: 'Fix brakes',

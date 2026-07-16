@@ -50,6 +50,7 @@ export class ApproveQuotationUseCase {
     return {
       id: quotation.id,
       serviceOrderId: quotation.serviceOrderId,
+      serviceOrderNumber: quotation.serviceOrderNumber,
       customerId: quotation.customerId,
       customerEmail: quotation.customerEmail,
       description: quotation.description,

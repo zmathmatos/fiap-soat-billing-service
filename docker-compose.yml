@@ -2,20 +2,29 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: ${BUILD_TARGET:-development}
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
     environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - MONGODB_URI=mongodb://mongo:27017/billing
-      - SMTP_HOST=mailhog
-      - SMTP_PORT=1025
-      - EMAIL_FROM=billing@fiap-soat.com
-      - OS_SERVICE_URL=http://host.docker.internal:3001
-      - AWS_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - MONGODB_URI=${MONGODB_URI}
+      - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN}
+      - MP_WEBHOOK_SECRET=${MP_WEBHOOK_SECRET}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - OS_SERVICE_URL=${OS_SERVICE_URL}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - SQS_QUEUE_URL=${SQS_QUEUE_URL}
+      - SNS_PAYMENT_APPROVED_TOPIC_ARN=${SNS_PAYMENT_APPROVED_TOPIC_ARN}
+      - SNS_PAYMENT_FAILED_TOPIC_ARN=${SNS_PAYMENT_FAILED_TOPIC_ARN}
     depends_on:
       - mongo
       - mailhog
@@ -26,15 +35,15 @@ services:
   mongo:
     image: mongo:7
     ports:
-      - "27017:27017"
+      - "${MONGO_PORT:-27017}:27017"
     volumes:
       - mongo_data:/data/db
 
   mailhog:
     image: mailhog/mailhog:latest
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "${SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_UI_PORT:-8025}:8025"
 
 volumes:
   mongo_data:

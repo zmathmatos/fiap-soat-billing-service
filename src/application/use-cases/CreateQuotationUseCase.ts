@@ -3,6 +3,7 @@ import { IQuotationRepository } from '../../domain/repositories/IQuotationReposi
 import { IEmailService } from '../services/IEmailService';
 import { CreateQuotationDto } from '../dtos/CreateQuotationDto';
 import { QuotationResponseDto } from '../dtos/QuotationResponseDto';
+import { env } from '../../shared/config/env';
 
 export class CreateQuotationUseCase {
   constructor(
@@ -15,6 +16,9 @@ export class CreateQuotationUseCase {
 
     await this.quotationRepository.save(quotation);
 
+    const approveUrl = `${env.appBaseUrl}/quotations/${quotation.id}/approve`;
+    const rejectUrl = `${env.appBaseUrl}/quotations/${quotation.id}/reject`;
+
     await this.emailService.send({
       to: dto.customerEmail,
       subject: 'Orçamento gerado — FIAP SOAT',
@@ -25,6 +29,11 @@ export class CreateQuotationUseCase {
         <p><strong>Descrição:</strong> ${dto.description}</p>
         <p><strong>Valor:</strong> R$ ${dto.amount.toFixed(2)}</p>
         <p><strong>ID do orçamento:</strong> ${quotation.id}</p>
+        <p>
+          <a href="${approveUrl}">Aprovar orçamento</a>
+          &nbsp;|&nbsp;
+          <a href="${rejectUrl}">Rejeitar orçamento</a>
+        </p>
       `,
     });
 

@@ -12,7 +12,13 @@
     "test": "jest",
     "test:unit": "jest --testPathPattern=tests/unit",
     "test:integration": "jest --testPathPattern=tests/integration",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "docker:up": "docker compose up",
+    "docker:up:build": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:down:volumes": "docker compose down -v",
+    "docker:logs": "docker compose logs -f app",
+    "docker:ps": "docker compose ps"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.600.0",

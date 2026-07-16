@@ -20,6 +20,7 @@ describe('CreateQuotationUseCase', () => {
     const useCase = new CreateQuotationUseCase(mockRepo, mockEmail);
     const dto = {
       serviceOrderId: 'so-1',
+      serviceOrderNumber: 1001,
       customerId: 'c-1',
       customerEmail: 'test@example.com',
       description: 'Fix brakes',
