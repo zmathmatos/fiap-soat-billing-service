@@ -4,6 +4,7 @@ describe('Quotation entity', () => {
   const makeQuotation = () =>
     new Quotation({
       serviceOrderId: 'so-1',
+      serviceOrderNumber: 1001,
       customerId: 'c-1',
       customerEmail: 'test@example.com',
       description: 'Fix brakes',

@@ -23,6 +23,7 @@ describe('RejectQuotationUseCase', () => {
     const quotation = new Quotation({
       id: 'q-1',
       serviceOrderId: 'so-1',
+      serviceOrderNumber: 1001,
       customerId: 'c-1',
       customerEmail: 'test@example.com',
       description: 'Fix brakes',
