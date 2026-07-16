@@ -35,6 +35,59 @@ Este serviço faz parte de uma arquitetura de microsserviços coordenada via **S
 
 Node.js, TypeScript, Express — Clean Architecture (domain / application / infrastructure / interface).
 
-## Status
 
-🚧 Em desenvolvimento — migração da funcionalidade de orçamento/pagamento a partir do monolito da Fase 3.
+## Rodando localmente com Docker
+
+O `docker-compose.yml` sobe todo o stack necessário para desenvolvimento local: o serviço `app`, um `mongo` (MongoDB) e um `mailhog` (servidor SMTP de testes).
+
+### Pré-requisitos
+
+- Docker e Docker Compose instalados;
+- Um arquivo `.env` na raiz do projeto (copie a partir do `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+Os valores padrão do `.env.example` já apontam para o `mailhog` como servidor SMTP local (`SMTP_HOST=localhost`, `SMTP_PORT=1025`), então nenhum ajuste é necessário para enviar e-mails localmente.
+
+### Subindo o stack
+
+```bash
+# Build + start de todos os serviços (app, mongo, mailhog)
+docker compose up --build
+# ou: npm run docker:up:build
+
+# Start sem rebuild
+docker compose up
+# ou: npm run docker:up
+
+# Rebuildar apenas o app após alterações de código
+docker compose up --build app
+
+# Ver logs do app
+docker compose logs -f app
+# ou: npm run docker:logs
+
+# Parar os serviços
+docker compose down
+# ou: npm run docker:down
+
+# Parar os serviços e remover volumes (ex.: dados do Mongo)
+docker compose down -v
+# ou: npm run docker:down:volumes
+```
+
+Após subir o stack, a API fica disponível em `http://localhost:3001` (ou na porta definida em `PORT` no `.env`).
+
+### Acessando o Mailhog
+
+Este serviço envia e-mails (orçamentos, links de pagamento) via `nodemailer`. Em ambiente local, esses e-mails **não** são enviados de verdade — eles são capturados pelo Mailhog, que atua como um servidor SMTP de teste.
+
+Para visualizar os e-mails enviados:
+
+1. Suba o stack com `docker compose up`;
+2. Acesse a UI do Mailhog em [http://localhost:8025](http://localhost:8025);
+3. Todos os e-mails disparados pela aplicação (ex.: notificação de orçamento gerado, link de pagamento) aparecerão listados ali, com o conteúdo completo do e-mail (HTML, texto, headers).
+
+Não é necessário nenhum login ou configuração adicional — o Mailhog aceita qualquer e-mail enviado para a porta SMTP `1025` e os expõe na UI web na porta `8025`.
