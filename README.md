@@ -28,7 +28,7 @@ Este serviço faz parte de uma arquitetura de microsserviços coordenada via **S
 
 ## Comunicação
 
-- **Assíncrona**: comandos recebidos e eventos publicados via mensageria (SQS/SNS);
+- **Assíncrona**: comandos recebidos e eventos publicados via mensageria (RabbitMQ);
 - **Síncrona**: API REST para consultas de orçamento e catálogo.
 
 ## Stack
