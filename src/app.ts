@@ -12,7 +12,7 @@ import { MongoQuotationRepository } from './infrastructure/database/MongoQuotati
 import { MongoPaymentRepository } from './infrastructure/database/MongoPaymentRepository';
 import { NodemailerEmailService } from './infrastructure/email/NodemailerEmailService';
 import { MercadoPagoService } from './infrastructure/payment/MercadoPagoService';
-import { SNSEventPublisher } from './infrastructure/messaging/SNSEventPublisher';
+import { RabbitMQEventPublisher } from './infrastructure/messaging/RabbitMQEventPublisher';
 import { OsServiceClient } from './infrastructure/http/OsServiceClient';
 
 export function createApp(): express.Application {
@@ -23,7 +23,7 @@ export function createApp(): express.Application {
   const paymentRepository = new MongoPaymentRepository();
   const emailService = new NodemailerEmailService();
   const paymentService = new MercadoPagoService();
-  const eventPublisher = new SNSEventPublisher();
+  const eventPublisher = new RabbitMQEventPublisher();
   const osServiceClient = new OsServiceClient();
 
   const createQuotationUseCase = new CreateQuotationUseCase(quotationRepository, emailService);
