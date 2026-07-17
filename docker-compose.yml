@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   app:
+    container_name: fiap-billing
     build:
       context: .
       target: ${BUILD_TARGET:-development}
@@ -31,6 +32,9 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    networks:
+      - default
+      - fiap-net
 
   mongo:
     image: mongo:7
@@ -47,3 +51,7 @@ services:
 
 volumes:
   mongo_data:
+
+networks:
+  fiap-net:
+    external: true
