@@ -10,10 +10,4 @@ export class OsServiceClient implements IOsServiceClient {
       event: 'quotation.rejected',
     });
   }
-
-  async updateStatusToInProgress(serviceOrderId: string): Promise<void> {
-    await axios.post(`${this.baseUrl}/service-orders/${serviceOrderId}/events`, {
-      event: 'payment.approved',
-    });
-  }
 }

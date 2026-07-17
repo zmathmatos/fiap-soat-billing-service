@@ -38,7 +38,6 @@ export function createApp(): express.Application {
     paymentRepository,
     paymentService,
     eventPublisher,
-    osServiceClient,
   );
 
   const quotationController = new QuotationController(

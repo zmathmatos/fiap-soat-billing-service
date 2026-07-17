@@ -13,7 +13,6 @@ const mockRepo: jest.Mocked<IQuotationRepository> = {
 
 const mockOsClient: jest.Mocked<IOsServiceClient> = {
   updateStatusToFinished: jest.fn(),
-  updateStatusToInProgress: jest.fn(),
 };
 
 describe('RejectQuotationUseCase', () => {
