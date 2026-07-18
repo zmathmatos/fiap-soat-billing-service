@@ -37,7 +37,7 @@ This service follows **Clean Architecture** with four layers:
 src/
   domain/           # Entities, value objects, repository interfaces, domain events
   application/      # Use cases, DTOs, service interfaces (no framework dependencies)
-  infrastructure/   # MongoDB repos, Mercado Pago client, nodemailer, SQS/SNS adapters
+  infrastructure/   # MongoDB repos, Mercado Pago client, nodemailer, RabbitMQ adapters
   interface/        # Express routes/controllers, webhook handlers, request/response mappers
 ```
 
@@ -49,8 +49,10 @@ Dependencies point inward only: `interface → application → domain ← infras
 2. **Generate quotation**: persist quotation to MongoDB and send an email via nodemailer (Mailhog for local dev).
 3. **Quotation rejected**: send the `quotation.rejected` event to `fiap-soat-os-service/` to set status → `"Finalizado"`.
 4. **Quotation approved**: send payment email to customer; create a Mercado Pago payment preference.
-5. **Payment confirmed** (Mercado Pago webhook): persist the full Mercado Pago payment payload to MongoDB, then send the `payment.approved` event to `fiap-soat-os-service` to set status → `"Em execução"`.
-6. **Payment events published**: `payment.approved` and `payment.failed` via SNS/SQS. If the `payment.faied` is send to `fiap-soat-os-service`, then it will update the status to `Finalizado`.
+5. **Payment confirmed** (Mercado Pago webhook): persist the full Mercado Pago payment payload to MongoDB, then publish the `payment.approved` event to RabbitMQ — `fiap-soat-os-service` consumes it and sets status → `"Em execução"`.
+6. **Payment rejected/cancelled**: publish the `payment.failed` event to RabbitMQ — `fiap-soat-os-service` consumes it and sets status → `"Finalizado"`.
+
+Both `payment.approved` and `payment.failed` are published to the `payment-events` topic exchange; `fiap-soat-execution-service` also consumes `payment.approved` from there to start the repair queue. Status updates for payment outcomes are async-only — this service does not call `fiap-soat-os-service` over REST for them (only `quotation.rejected` still uses the synchronous REST callback).
 
 ## Key Integrations
 
@@ -59,8 +61,8 @@ Dependencies point inward only: `interface → application → domain ← infras
 | MongoDB / DocumentDB | Sole database — no other service accesses it | `MONGODB_URI` |
 | Mercado Pago API | Payment preference creation + webhook verification | `MP_ACCESS_TOKEN` |
 | nodemailer + Mailhog | Email sending (quotations, payment links) | `SMTP_HOST`, `SMTP_PORT` |
-| fiap-soat-os-service | Update service order status (sync REST calls) | `OS_SERVICE_URL` |
-| AWS SQS / SNS | Receive commands, publish payment events (async) | `AWS_*`, queue/topic ARNs |
+| fiap-soat-os-service | Update service order status for `quotation.rejected` (sync REST call) | `OS_SERVICE_URL` |
+| RabbitMQ | Publish `payment.approved`/`payment.failed` events, consumed by `fiap-soat-os-service` (status) and `fiap-soat-execution-service` (repair queue) | `RABBITMQ_URL`, exchange/queue names |
 
 Mercado Pago integration docs: https://www.mercadopago.com.br/developers/pt
 
@@ -102,7 +104,7 @@ GitHub Actions workflows live in `.github/workflows/`:
 
 ## Infrastructure
 
-- **Terraform** provisions all AWS resources (VPC, EKS cluster, SQS queues, SNS topics, DocumentDB) — see sibling repo `fiap-soat-tech-challenge-infra-k8s` and `fiap-soat-tech-challenge-infra-db`.
+- **Terraform** provisions all AWS resources (VPC, EKS cluster, RabbitMQ broker, DocumentDB) — see sibling repo `fiap-soat-tech-challenge-infra-k8s` and `fiap-soat-tech-challenge-infra-db`.
 - **Kubernetes** (EKS) deployment manifests live in the infra-k8s repo; this repo produces the Docker image that is deployed there.
 
 ## Microservice Ecosystem

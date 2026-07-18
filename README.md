@@ -28,7 +28,7 @@ Este serviço faz parte de uma arquitetura de microsserviços coordenada via **S
 
 ## Comunicação
 
-- **Assíncrona**: comandos recebidos e eventos publicados via mensageria (SQS/SNS);
+- **Assíncrona**: comandos recebidos e eventos publicados via mensageria (RabbitMQ);
 - **Síncrona**: API REST para consultas de orçamento e catálogo.
 
 ## Stack
@@ -39,6 +39,8 @@ Node.js, TypeScript, Express — Clean Architecture (domain / application / infr
 ## Rodando localmente com Docker
 
 O `docker-compose.yml` sobe todo o stack necessário para desenvolvimento local: o serviço `app`, um `mongo` (MongoDB) e um `mailhog` (servidor SMTP de testes).
+
+O broker **RabbitMQ**, usado para publicar os eventos de pagamento, não faz parte deste `docker-compose.yml` — ele sobe junto com a stack do [fiap-soat-os-service](https://github.com/zmathmatos/fiap-soat-os-service) (`npm run docker:dev`) e é compartilhado via a rede Docker externa `fiap-net`. Suba o `os-service` antes deste repositório; veja a seção ["Rodar junto com o billing-service"](https://github.com/zmathmatos/fiap-soat-os-service#rodar-junto-com-o-billing-service) no README dele para o passo a passo.
 
 ### Pré-requisitos
 

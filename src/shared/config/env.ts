@@ -20,12 +20,9 @@ export const env = {
 
   osServiceUrl: process.env.OS_SERVICE_URL || 'http://localhost:3001',
 
-  aws: {
-    region: process.env.AWS_REGION || 'us-east-1',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    sqsQueueUrl: process.env.SQS_QUEUE_URL || '',
-    snsPaymentApprovedTopicArn: process.env.SNS_PAYMENT_APPROVED_TOPIC_ARN || '',
-    snsPaymentFailedTopicArn: process.env.SNS_PAYMENT_FAILED_TOPIC_ARN || '',
+  rabbitmq: {
+    url: process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672',
+    exchange: process.env.RABBITMQ_EXCHANGE || 'payment-events',
+    queue: process.env.RABBITMQ_QUEUE || 'billing-queue',
   },
 };

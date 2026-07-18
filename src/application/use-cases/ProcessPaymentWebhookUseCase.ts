@@ -1,7 +1,6 @@
 import { IPaymentRepository } from '../../domain/repositories/IPaymentRepository';
 import { IPaymentService } from '../services/IPaymentService';
 import { IEventPublisher } from '../services/IEventPublisher';
-import { IOsServiceClient } from '../services/IOsServiceClient';
 import { PaymentWebhookDto } from '../dtos/PaymentWebhookDto';
 import { AppError } from '../../shared/errors/AppError';
 
@@ -10,7 +9,6 @@ export class ProcessPaymentWebhookUseCase {
     private readonly paymentRepository: IPaymentRepository,
     private readonly paymentService: IPaymentService,
     private readonly eventPublisher: IEventPublisher,
-    private readonly osServiceClient: IOsServiceClient,
   ) {}
 
   async execute(dto: PaymentWebhookDto): Promise<void> {
@@ -35,8 +33,6 @@ export class ProcessPaymentWebhookUseCase {
         serviceOrderId: payment.serviceOrderId,
         amount: payment.amount,
       });
-
-      await this.osServiceClient.updateStatusToInProgress(payment.serviceOrderId);
     } else if (mpStatus === 'rejected' || mpStatus === 'cancelled') {
       payment.fail();
       await this.paymentRepository.update(payment);
