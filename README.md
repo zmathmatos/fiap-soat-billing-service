@@ -93,3 +93,25 @@ Para visualizar os e-mails enviados:
 3. Todos os e-mails disparados pela aplicação (ex.: notificação de orçamento gerado, link de pagamento) aparecerão listados ali, com o conteúdo completo do e-mail (HTML, texto, headers).
 
 Não é necessário nenhum login ou configuração adicional — o Mailhog aceita qualquer e-mail enviado para a porta SMTP `1025` e os expõe na UI web na porta `8025`.
+
+### Testando o fluxo de pagamento localmente (webhook do Mercado Pago)
+
+O Mercado Pago notifica o pagamento (aprovado/recusado) via **webhook HTTP** (`POST /webhooks/mercadopago`). Como esse webhook é disparado pelos servidores do Mercado Pago, ele não consegue alcançar `http://localhost:3001` — é necessário expor a aplicação local através de um túnel público, como o [ngrok](https://ngrok.com/).
+
+1. Suba o stack local normalmente (`docker compose up`);
+2. Em outro terminal, exponha a porta da aplicação com o ngrok:
+
+```bash
+ngrok http 3001
+```
+
+3. Copie a URL pública gerada pelo ngrok (ex.: `https://abcd-1234.ngrok-free.app`) e configure no `.env`:
+
+```bash
+MP_NOTIFICATION_URL=https://abcd-1234.ngrok-free.app
+```
+
+4. **Recrie o container** (`docker compose up --build app` — só reiniciar não basta, o `docker-compose.yml` precisa repassar a variável de ambiente do `.env` para dentro do container) para que a nova `MP_NOTIFICATION_URL` seja usada na criação da preferência de pagamento — é esse valor que define o `notification_url` enviado ao Mercado Pago (se não for definido, cai para `APP_BASE_URL`);
+5. Aprove um orçamento **novo** e efetue o pagamento pelo link gerado — preferências criadas antes de configurar a `MP_NOTIFICATION_URL` não têm o `notification_url` correto e não vão gerar webhook. O webhook do Mercado Pago deverá chegar em `POST /webhooks/mercadopago` na sua aplicação local, e é possível acompanhar as requisições recebidas pela UI web do ngrok em [http://localhost:4040](http://localhost:4040).
+
+> **Atenção:** sem uma `MP_NOTIFICATION_URL`/`APP_BASE_URL` pública (ngrok localmente, ou a URL real do ingress em produção/EKS) **repassada para o container**, o Mercado Pago não tem para onde enviar a notificação e o pagamento nunca será confirmado automaticamente no billing-service.

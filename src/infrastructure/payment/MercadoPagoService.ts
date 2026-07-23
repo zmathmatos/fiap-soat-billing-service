@@ -23,6 +23,7 @@ export class MercadoPagoService implements IPaymentService {
         ],
         payer: { email: input.payerEmail },
         external_reference: input.quotationId,
+        notification_url: `${env.mercadoPago.notificationUrl}/webhooks/mercadopago`,
       },
     });
 
