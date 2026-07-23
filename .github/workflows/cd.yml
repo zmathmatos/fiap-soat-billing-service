@@ -119,13 +119,11 @@ jobs:
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           MP_ACCESS_TOKEN: ${{ secrets.MP_ACCESS_TOKEN }}
-          MP_WEBHOOK_SECRET: ${{ secrets.MP_WEBHOOK_SECRET }}
           RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
         run: |
           kubectl -n "$K8S_NAMESPACE" create secret generic "${APP_NAME}-secret" \
             --from-literal=MONGODB_URI="$MONGODB_URI" \
             --from-literal=MP_ACCESS_TOKEN="$MP_ACCESS_TOKEN" \
-            --from-literal=MP_WEBHOOK_SECRET="$MP_WEBHOOK_SECRET" \
             --from-literal=RABBITMQ_URL="$RABBITMQ_URL" \
             --dry-run=client -o yaml | kubectl apply -f -
 
