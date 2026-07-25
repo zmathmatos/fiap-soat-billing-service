@@ -31,7 +31,11 @@ export function createApp(): express.Application {
     emailService,
     paymentService,
   );
-  const rejectQuotationUseCase = new RejectQuotationUseCase(quotationRepository, osServiceClient);
+  const rejectQuotationUseCase = new RejectQuotationUseCase(
+    quotationRepository,
+    osServiceClient,
+    eventPublisher,
+  );
   const processPaymentWebhookUseCase = new ProcessPaymentWebhookUseCase(
     paymentRepository,
     paymentService,

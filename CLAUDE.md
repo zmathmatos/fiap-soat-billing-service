@@ -45,6 +45,8 @@ Dependencies point inward only: `interface → application → domain ← infras
 
 ## Service Responsibilities & Flow
 
+The ecosystem uses a **choreographed saga**: no central orchestrator, and each service publishes the events of the steps it owns. This service owns the quotation and payment steps and publishes everything on the `payment-events` topic exchange.
+
 1. **Receive service order**: `fiap-soat-os-service` publishes a `quotation.requested` event to the `quotation-events` topic exchange when a service order's status becomes `"Aguardando aprovação"`; this service's `RabbitMQQuotationEventConsumer` consumes it and calls `CreateQuotationUseCase`.
 2. **Generate quotation**: persist quotation to MongoDB and send an email via nodemailer (Mailhog for local dev). Idempotent by `serviceOrderId` — a redelivered `quotation.requested` event for an already-known service order is a no-op (skips both the write and the email) instead of creating a duplicate.
 3. **Quotation rejected**: send the `quotation.rejected` event to `fiap-soat-os-service/` to set status → `"Finalizado"`.
@@ -52,7 +54,7 @@ Dependencies point inward only: `interface → application → domain ← infras
 5. **Payment confirmed** (Mercado Pago webhook): persist the full Mercado Pago payment payload to MongoDB, then publish the `payment.approved` event to RabbitMQ — `fiap-soat-os-service` consumes it and sets status → `"Em execução"`.
 6. **Payment rejected/cancelled**: publish the `payment.failed` event to RabbitMQ — `fiap-soat-os-service` consumes it and sets status → `"Finalizado"`.
 
-`payment.approved`/`payment.failed` are published to the `payment-events` topic exchange; `fiap-soat-execution-service` also consumes `payment.approved` from there to start the repair queue. `quotation.requested` is consumed from a separate `quotation-events` topic exchange (queue `billing-service.quotation-events`) — kept distinct from `payment-events` since it's an unrelated inbound flow. Quotation creation and payment outcomes are both async-only now; only `quotation.rejected` still uses a synchronous REST callback back to `fiap-soat-os-service`.
+Every published message carries a `messageId`; consumers dedupe on it.`payment.approved`/`payment.failed` are published to the `payment-events` topic exchange; `fiap-soat-execution-service` also consumes `payment.approved` from there to start the repair queue. `quotation.requested` is consumed from a separate `quotation-events` topic exchange (queue `billing-service.quotation-events`) — kept distinct from `payment-events` since it's an unrelated inbound flow. Quotation creation and payment outcomes are both async-only now; only `quotation.rejected` still uses a synchronous REST callback back to `fiap-soat-os-service`.
 
 ## Key Integrations
 
@@ -113,7 +115,7 @@ GitHub Actions workflows live in `.github/workflows/`:
 |---|---|
 | `fiap-soat-os-service` | Sends service orders here, receives status updates via published events (choreographed saga participant) |
 | **`fiap-soat-billing-service`** | This service |
-| `fiap-soat-execution-service` | Consumes `payment.approved` to start repair queue |
+| `fiap-soat-execution-service` | Owns the diagnosis/execution queues; publishes `diagnostic.finished`, consumes `payment.approved`/`payment.failed`/`quotation.rejected` |
 | `fiap-soat-tech-challenge-lambda` | CPF-based auth lambda |
 | `fiap-soat-tech-challenge-infra-k8s` | Kubernetes + messaging infrastructure (Terraform) |
 | `fiap-soat-tech-challenge-infra-db` | Database infrastructure (Terraform) |

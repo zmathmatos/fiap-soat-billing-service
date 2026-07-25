@@ -1,6 +1,7 @@
 import { RejectQuotationUseCase } from '../../../src/application/use-cases/RejectQuotationUseCase';
 import { IQuotationRepository } from '../../../src/domain/repositories/IQuotationRepository';
 import { IOsServiceClient } from '../../../src/application/services/IOsServiceClient';
+import { IEventPublisher } from '../../../src/application/services/IEventPublisher';
 import { Quotation } from '../../../src/domain/entities/Quotation';
 import { AppError } from '../../../src/shared/errors/AppError';
 
@@ -13,6 +14,12 @@ const mockRepo: jest.Mocked<IQuotationRepository> = {
 
 const mockOsClient: jest.Mocked<IOsServiceClient> = {
   updateStatusToFinished: jest.fn(),
+};
+
+const mockEventPublisher: jest.Mocked<IEventPublisher> = {
+  publishPaymentApproved: jest.fn(),
+  publishPaymentFailed: jest.fn(),
+  publishQuotationRejected: jest.fn(),
 };
 
 describe('RejectQuotationUseCase', () => {
@@ -30,7 +37,7 @@ describe('RejectQuotationUseCase', () => {
     });
     mockRepo.findById.mockResolvedValue(quotation);
 
-    const useCase = new RejectQuotationUseCase(mockRepo, mockOsClient);
+    const useCase = new RejectQuotationUseCase(mockRepo, mockOsClient, mockEventPublisher);
     const result = await useCase.execute('q-1');
 
     expect(result.status).toBe('rejected');
@@ -38,9 +45,30 @@ describe('RejectQuotationUseCase', () => {
     expect(mockOsClient.updateStatusToFinished).toHaveBeenCalledWith('so-1');
   });
 
+  it('publishes quotation.rejected so the execution service compensates', async () => {
+    const quotation = new Quotation({
+      id: 'q-1',
+      serviceOrderId: 'so-1',
+      serviceOrderNumber: 1001,
+      customerId: 'c-1',
+      customerEmail: 'test@example.com',
+      description: 'Fix brakes',
+      amount: 500,
+    });
+    mockRepo.findById.mockResolvedValue(quotation);
+
+    const useCase = new RejectQuotationUseCase(mockRepo, mockOsClient, mockEventPublisher);
+    await useCase.execute('q-1');
+
+    expect(mockEventPublisher.publishQuotationRejected).toHaveBeenCalledWith({
+      quotationId: 'q-1',
+      serviceOrderId: 'so-1',
+    });
+  });
+
   it('throws 404 when quotation not found', async () => {
     mockRepo.findById.mockResolvedValue(null);
-    const useCase = new RejectQuotationUseCase(mockRepo, mockOsClient);
+    const useCase = new RejectQuotationUseCase(mockRepo, mockOsClient, mockEventPublisher);
     await expect(useCase.execute('missing')).rejects.toThrow(AppError);
   });
 });
