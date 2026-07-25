@@ -111,7 +111,7 @@ GitHub Actions workflows live in `.github/workflows/`:
 
 | Repo | Role |
 |---|---|
-| `fiap-soat-os-service` | Orchestrator — sends service orders here, receives status updates |
+| `fiap-soat-os-service` | Sends service orders here, receives status updates via published events (choreographed saga participant) |
 | **`fiap-soat-billing-service`** | This service |
 | `fiap-soat-execution-service` | Consumes `payment.approved` to start repair queue |
 | `fiap-soat-tech-challenge-lambda` | CPF-based auth lambda |

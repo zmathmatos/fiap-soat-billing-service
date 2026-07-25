@@ -11,11 +11,11 @@ Microsserviço de **Orçamento e Pagamento** da oficina mecânica (Fase 4).
 
 ## Arquitetura
 
-Este serviço faz parte de uma arquitetura de microsserviços coordenada via **Saga Pattern orquestrada**, onde o [OS Service](https://github.com/zmathmatos/fiap-soat-os-service) atua como orquestrador.
+Este serviço faz parte de uma arquitetura de microsserviços coordenada via **Saga Pattern coreografada (Choreography)**: não há um orquestrador central — cada serviço publica e consome eventos de domínio via RabbitMQ e reage a eles de forma autônoma para dar continuidade ao fluxo da saga.
 
 | Repositório | Conteúdo |
 |---|---|
-| [fiap-soat-os-service](https://github.com/zmathmatos/fiap-soat-os-service) | Ordens de serviço, cadastro (usuários/veículos), orquestração da Saga |
+| [fiap-soat-os-service](https://github.com/zmathmatos/fiap-soat-os-service) | Ordens de serviço, cadastro (usuários/veículos), participante da Saga coreografada |
 | **fiap-soat-billing-service** | ← Este repo — Orçamento e pagamento (Mercado Pago) |
 | [fiap-soat-execution-service](https://github.com/zmathmatos/fiap-soat-execution-service) | Fila de execução, diagnóstico e reparos |
 | [fiap-soat-tech-challenge-lambda](https://github.com/zmathmatos/fiap-soat-tech-challenge-lambda) | Lambda de autenticação via CPF |
