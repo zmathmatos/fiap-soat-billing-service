@@ -37,15 +37,24 @@ export class ApproveQuotationUseCase {
     });
     await this.paymentRepository.save(payment);
 
-    await this.emailService.send({
-      to: quotation.customerEmail,
-      subject: 'Orçamento aprovado — efetue o pagamento',
-      html: `
+    try {
+      await this.emailService.send({
+        to: quotation.customerEmail,
+        subject: 'Orçamento aprovado — efetue o pagamento',
+        html: `
         <h2>Orçamento aprovado!</h2>
         <p><strong>Valor:</strong> R$ ${quotation.amount.toFixed(2)}</p>
         <p><a href="${preference.initPoint}">Clique aqui para pagar</a></p>
       `,
-    });
+      });
+    } catch (error) {
+      console.error({
+        event: 'email.send.error',
+        subject: 'quotation.approved',
+        quotationId: quotation.id,
+        err: error,
+      });
+    }
 
     return {
       id: quotation.id,

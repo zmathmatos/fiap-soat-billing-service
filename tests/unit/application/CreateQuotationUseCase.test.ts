@@ -15,7 +15,7 @@ const mockEmail: jest.Mocked<IEmailService> = {
 };
 
 describe('CreateQuotationUseCase', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => jest.resetAllMocks());
 
   it('saves quotation and sends email', async () => {
     const useCase = new CreateQuotationUseCase(mockRepo, mockEmail);
@@ -55,5 +55,28 @@ describe('CreateQuotationUseCase', () => {
     expect(mockEmail.send).not.toHaveBeenCalled();
     expect(result.id).toBe('existing-id');
     expect(result.status).toBe('pending');
+  });
+  
+  it('still returns the quotation when the email fails', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockEmail.send.mockRejectedValueOnce(new Error('ENOTFOUND mailhog'));
+
+    const useCase = new CreateQuotationUseCase(mockRepo, mockEmail);
+    const result = await useCase.execute({
+      serviceOrderId: 'so-2',
+      serviceOrderNumber: 1002,
+      customerId: 'c-2',
+      customerEmail: 'test@example.com',
+      description: 'Fix brakes',
+      amount: 500,
+    });
+
+    expect(mockRepo.save).toHaveBeenCalledTimes(1);
+    expect(result.serviceOrderId).toBe('so-2');
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'email.send.error', subject: 'quotation.created' }),
+    );
+
+    consoleError.mockRestore();
   });
 });

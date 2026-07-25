@@ -4,8 +4,8 @@ Microsserviço de **Orçamento e Pagamento** da oficina mecânica (Fase 4).
 
 ## Responsabilidades
 
-- Geração e envio de orçamentos para aprovação do cliente;
-- Aprovação/rejeição de orçamento (`/quotations/:serviceOrderNumber/approval` e `/rejection`);
+- Consumo do evento `quotation.requested` (publicado pelo `fiap-soat-os-service` via RabbitMQ) para geração e envio de orçamentos por e-mail;
+- Aprovação/rejeição de orçamento via links enviados por e-mail (`GET /quotations/:id/approve` e `GET /quotations/:id/reject`);
 - Registro e verificação de pagamentos via integração com **Mercado Pago** (webhook);
 - Publicação dos eventos do domínio de cobrança no exchange `payment-events`: `payment.approved`, `payment.failed` e `quotation.rejected`.
 
@@ -17,7 +17,7 @@ Microsserviço de **Orçamento e Pagamento** da oficina mecânica (Fase 4).
 | `payment-events` | `payment.failed` | os-service, execution-service | OS → "Finalizado"; ordem cancelada (compensação) |
 | `payment-events` | `quotation.rejected` | execution-service | Ordem cancelada (compensação); o os-service recebe esse caso via REST |
 
-Este serviço não consome eventos hoje — ele recebe o orçamento do os-service via REST e é acionado pelo webhook do Mercado Pago.
+Este serviço consome o evento `quotation.requested` do exchange `quotation-events` (fila `billing-service.quotation-events`) e é acionado pelo webhook do Mercado Pago para confirmação de pagamento.
 
 ## Arquitetura
 
@@ -38,8 +38,8 @@ Este serviço faz parte de uma arquitetura de microsserviços coordenada via **S
 
 ## Comunicação
 
-- **Assíncrona**: criação de orçamento (`quotation.requested`, consumido do `fiap-soat-os-service`) e eventos de pagamento publicados via mensageria (RabbitMQ);
-- **Síncrona**: API REST para aprovação/rejeição de orçamento (links enviados por e-mail) e webhook do Mercado Pago.
+- **Assíncrona**: criação de orçamento via consumo do evento `quotation.requested` (RabbitMQ) e publicação dos eventos de pagamento (`payment.approved`, `payment.failed`, `quotation.rejected`);
+- **Síncrona**: API REST para aprovação/rejeição de orçamento (`GET /quotations/:id/approve` e `GET /quotations/:id/reject`, acionados por links no e-mail) e webhook do Mercado Pago (`POST /webhooks/mercadopago`).
 
 ## Stack
 

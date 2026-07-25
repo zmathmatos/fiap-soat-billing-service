@@ -35,10 +35,11 @@ export class CreateQuotationUseCase {
     const approveUrl = `${env.appBaseUrl}/quotations/${quotation.id}/approve`;
     const rejectUrl = `${env.appBaseUrl}/quotations/${quotation.id}/reject`;
 
-    await this.emailService.send({
-      to: dto.customerEmail,
-      subject: 'Orçamento gerado — FIAP SOAT',
-      html: `
+    try {
+      await this.emailService.send({
+        to: dto.customerEmail,
+        subject: 'Orçamento gerado — FIAP SOAT',
+        html: `
         <h2>Olá!</h2>
         <p>Seu orçamento foi gerado com sucesso.</p>
         <p><strong>OS nº:</strong> ${dto.serviceOrderNumber}</p>
@@ -51,7 +52,15 @@ export class CreateQuotationUseCase {
           <a href="${rejectUrl}">Rejeitar orçamento</a>
         </p>
       `,
-    });
+      });
+    } catch (error) {
+      console.error({
+        event: 'email.send.error',
+        subject: 'quotation.created',
+        quotationId: quotation.id,
+        err: error,
+      });
+    }
 
     return {
       id: quotation.id,
