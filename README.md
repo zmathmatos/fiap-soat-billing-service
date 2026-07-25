@@ -7,7 +7,17 @@ Microsserviço de **Orçamento e Pagamento** da oficina mecânica (Fase 4).
 - Geração e envio de orçamentos para aprovação do cliente;
 - Aprovação/rejeição de orçamento (`/quotations/:serviceOrderNumber/approval` e `/rejection`);
 - Registro e verificação de pagamentos via integração com **Mercado Pago** (webhook);
-- Publicação de eventos de pagamento (`payment.approved`, `payment.failed`, `payment.refunded`) para o OS Service.
+- Publicação dos eventos do domínio de cobrança no exchange `payment-events`: `payment.approved`, `payment.failed` e `quotation.rejected`.
+
+### Eventos publicados
+
+| Exchange (topic) | Routing key | Consumido por | Efeito |
+|---|---|---|---|
+| `payment-events` | `payment.approved` | os-service, execution-service | OS → "Em execução"; ordem entra na fila de execução |
+| `payment-events` | `payment.failed` | os-service, execution-service | OS → "Finalizado"; ordem cancelada (compensação) |
+| `payment-events` | `quotation.rejected` | execution-service | Ordem cancelada (compensação); o os-service recebe esse caso via REST |
+
+Este serviço não consome eventos hoje — ele recebe o orçamento do os-service via REST e é acionado pelo webhook do Mercado Pago.
 
 ## Arquitetura
 
@@ -17,7 +27,7 @@ Este serviço faz parte de uma arquitetura de microsserviços coordenada via **S
 |---|---|
 | [fiap-soat-os-service](https://github.com/zmathmatos/fiap-soat-os-service) | Ordens de serviço, cadastro (usuários/veículos), participante da Saga coreografada |
 | **fiap-soat-billing-service** | ← Este repo — Orçamento e pagamento (Mercado Pago) |
-| [fiap-soat-execution-service](https://github.com/zmathmatos/fiap-soat-execution-service) | Fila de execução, diagnóstico e reparos |
+| [fiap-soat-execution-service](https://github.com/zmathmatos/fiap-soat-execution-service) | Filas de diagnóstico e execução, reparos — publica `diagnostic.finished` |
 | [fiap-soat-tech-challenge-lambda](https://github.com/zmathmatos/fiap-soat-tech-challenge-lambda) | Lambda de autenticação via CPF |
 | [fiap-soat-tech-challenge-infra-k8s](https://github.com/zmathmatos/fiap-soat-tech-challenge-infra-k8s) | Infraestrutura Kubernetes (VPC, EKS, mensageria) via Terraform |
 | [fiap-soat-tech-challenge-infra-db](https://github.com/zmathmatos/fiap-soat-tech-challenge-infra-db) | Infraestrutura dos bancos de dados via Terraform |

@@ -3,6 +3,8 @@ import { env } from '../../shared/config/env';
 
 export type MessageHandler = (body: Record<string, unknown>) => Promise<void>;
 
+// Generic consumer kept for future inbound events. It is not wired in app.ts today:
+// this service only publishes (payment.*/quotation.rejected) in the choreographed saga.
 export class RabbitMQEventConsumer {
   private channel: Channel | null = null;
 
@@ -28,9 +30,10 @@ export class RabbitMQEventConsumer {
       const body = JSON.parse(message.content.toString());
       await handler(body);
       this.channel!.ack(message);
-    } catch (_err) {
-      // Requeue for retry
-      this.channel!.nack(message, false, true);
+    } catch (err) {
+      // A malformed payload never becomes valid on retry — requeueing it would loop forever.
+      const permanent = err instanceof SyntaxError;
+      this.channel!.nack(message, false, !permanent);
     }
   }
 }
