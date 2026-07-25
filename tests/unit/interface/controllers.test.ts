@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { QuotationController } from '../../../src/interface/http/controllers/QuotationController';
 import { WebhookController } from '../../../src/interface/http/controllers/WebhookController';
-import { CreateQuotationUseCase } from '../../../src/application/use-cases/CreateQuotationUseCase';
 import { ApproveQuotationUseCase } from '../../../src/application/use-cases/ApproveQuotationUseCase';
 import { RejectQuotationUseCase } from '../../../src/application/use-cases/RejectQuotationUseCase';
 import { ProcessPaymentWebhookUseCase } from '../../../src/application/use-cases/ProcessPaymentWebhookUseCase';
@@ -21,26 +20,9 @@ describe('QuotationController', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('creates a quotation and answers 201', async () => {
-    const execute = jest.fn().mockResolvedValue({ id: 'q-1' });
-    const controller = new QuotationController(
-      useCase<CreateQuotationUseCase>(execute),
-      useCase<ApproveQuotationUseCase>(jest.fn()),
-      useCase<RejectQuotationUseCase>(jest.fn()),
-    );
-    const res = makeResponse();
-
-    await controller.create({ body: { amount: 10 } } as Request, res, next);
-
-    expect(execute).toHaveBeenCalledWith({ amount: 10 });
-    expect(res.status).toHaveBeenCalledWith(201);
-    expect(res.json).toHaveBeenCalledWith({ id: 'q-1' });
-  });
-
   it('approves a quotation by id', async () => {
     const execute = jest.fn().mockResolvedValue({ id: 'q-1', status: 'approved' });
     const controller = new QuotationController(
-      useCase<CreateQuotationUseCase>(jest.fn()),
       useCase<ApproveQuotationUseCase>(execute),
       useCase<RejectQuotationUseCase>(jest.fn()),
     );
@@ -55,7 +37,6 @@ describe('QuotationController', () => {
   it('rejects a quotation by id', async () => {
     const execute = jest.fn().mockResolvedValue({ id: 'q-1', status: 'rejected' });
     const controller = new QuotationController(
-      useCase<CreateQuotationUseCase>(jest.fn()),
       useCase<ApproveQuotationUseCase>(jest.fn()),
       useCase<RejectQuotationUseCase>(execute),
     );
@@ -66,17 +47,16 @@ describe('QuotationController', () => {
     expect(execute).toHaveBeenCalledWith('q-1');
   });
 
-  it('forwards use case errors to the error middleware', async () => {
+  it('forwards approve errors to the error middleware', async () => {
     const error = new Error('boom');
     const controller = new QuotationController(
-      useCase<CreateQuotationUseCase>(jest.fn().mockRejectedValue(error)),
-      useCase<ApproveQuotationUseCase>(jest.fn()),
+      useCase<ApproveQuotationUseCase>(jest.fn().mockRejectedValue(error)),
       useCase<RejectQuotationUseCase>(jest.fn()),
     );
     const res = makeResponse();
     const nextFn = jest.fn();
 
-    await controller.create({ body: {} } as Request, res, nextFn);
+    await controller.approve({ params: { id: 'q-1' } } as unknown as Request, res, nextFn);
 
     expect(nextFn).toHaveBeenCalledWith(error);
     expect(res.json).not.toHaveBeenCalled();

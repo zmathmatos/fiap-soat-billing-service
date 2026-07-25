@@ -28,5 +28,7 @@ export const env = {
     url: process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672",
     exchange: process.env.RABBITMQ_EXCHANGE || "payment-events",
     queue: process.env.RABBITMQ_QUEUE || "billing-queue",
+    quotationExchange: process.env.RABBITMQ_QUOTATION_EXCHANGE || "quotation-events",
+    quotationQueue: process.env.RABBITMQ_QUOTATION_QUEUE || "billing-service.quotation-events",
   },
 };

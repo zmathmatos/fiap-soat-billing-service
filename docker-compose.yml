@@ -25,6 +25,8 @@ services:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-payment-events}
       - RABBITMQ_QUEUE=${RABBITMQ_QUEUE:-billing-queue}
+      - RABBITMQ_QUOTATION_EXCHANGE=${RABBITMQ_QUOTATION_EXCHANGE:-quotation-events}
+      - RABBITMQ_QUOTATION_QUEUE=${RABBITMQ_QUOTATION_QUEUE:-billing-service.quotation-events}
     depends_on:
       - mongo
       - mailhog
