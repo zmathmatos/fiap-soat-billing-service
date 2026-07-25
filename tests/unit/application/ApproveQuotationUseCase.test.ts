@@ -107,6 +107,22 @@ describe('ApproveQuotationUseCase', () => {
     expect(options.html).toContain('https://mp.example/checkout/pref-1');
   });
 
+  it('still approves when the email fails', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockQuotationRepo.findById.mockResolvedValue(makeQuotation());
+    mockEmailService.send.mockRejectedValueOnce(new Error('ENOTFOUND mailhog'));
+
+    const result = await makeUseCase().execute('q-1');
+
+    expect(result.status).toBe('approved');
+    expect(mockPaymentRepo.save).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'email.send.error', subject: 'quotation.approved' }),
+    );
+
+    consoleError.mockRestore();
+  });
+
   it('throws 404 when the quotation does not exist', async () => {
     mockQuotationRepo.findById.mockResolvedValue(null);
 
