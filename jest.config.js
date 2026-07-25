@@ -1,11 +1,18 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
+  // src is a root so coverage also reports files no test imports
+  roots: ['<rootDir>/src', '<rootDir>/tests'],
   testMatch: ['**/*.test.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/server.ts',
+    '!src/app.ts',
+    '!src/**/routes/**',
+    // Thin vendor adapters: no logic of our own, exercised end-to-end instead
+    '!src/infrastructure/payment/MercadoPagoService.ts',
+    '!src/infrastructure/email/NodemailerEmailService.ts',
+    '!src/infrastructure/messaging/RabbitMQEventConsumer.ts',
     '!src/**/*.d.ts',
   ],
   coverageThreshold: {
