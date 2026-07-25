@@ -12,6 +12,22 @@ export class CreateQuotationUseCase {
   ) {}
 
   async execute(dto: CreateQuotationDto): Promise<QuotationResponseDto> {
+    const existing = await this.quotationRepository.findByServiceOrderId(dto.serviceOrderId);
+    if (existing) {
+      return {
+        id: existing.id,
+        serviceOrderId: existing.serviceOrderId,
+        serviceOrderNumber: existing.serviceOrderNumber,
+        customerId: existing.customerId,
+        customerEmail: existing.customerEmail,
+        description: existing.description,
+        amount: existing.amount,
+        status: existing.status,
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+      };
+    }
+
     const quotation = new Quotation(dto);
 
     await this.quotationRepository.save(quotation);

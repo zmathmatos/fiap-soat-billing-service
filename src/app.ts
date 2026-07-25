@@ -4,7 +4,6 @@ import { webhookRoutes } from './interface/http/routes/webhookRoutes';
 import { errorHandler } from './interface/http/middlewares/errorHandler';
 import { QuotationController } from './interface/http/controllers/QuotationController';
 import { WebhookController } from './interface/http/controllers/WebhookController';
-import { CreateQuotationUseCase } from './application/use-cases/CreateQuotationUseCase';
 import { ApproveQuotationUseCase } from './application/use-cases/ApproveQuotationUseCase';
 import { RejectQuotationUseCase } from './application/use-cases/RejectQuotationUseCase';
 import { ProcessPaymentWebhookUseCase } from './application/use-cases/ProcessPaymentWebhookUseCase';
@@ -26,7 +25,6 @@ export function createApp(): express.Application {
   const eventPublisher = new RabbitMQEventPublisher();
   const osServiceClient = new OsServiceClient();
 
-  const createQuotationUseCase = new CreateQuotationUseCase(quotationRepository, emailService);
   const approveQuotationUseCase = new ApproveQuotationUseCase(
     quotationRepository,
     paymentRepository,
@@ -40,11 +38,7 @@ export function createApp(): express.Application {
     eventPublisher,
   );
 
-  const quotationController = new QuotationController(
-    createQuotationUseCase,
-    approveQuotationUseCase,
-    rejectQuotationUseCase,
-  );
+  const quotationController = new QuotationController(approveQuotationUseCase, rejectQuotationUseCase);
   const webhookController = new WebhookController(processPaymentWebhookUseCase);
 
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));

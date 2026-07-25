@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "FIAP SOAT Billing Service",
-    "description": "API documentation for the fiap-soat-billing-service. Handles quotation lifecycle (create, approve, reject) and processes MercadoPago payment webhooks.",
+    "description": "API documentation for the fiap-soat-billing-service. Quotations are created asynchronously (fiap-soat-os-service publishes a `quotation.requested` RabbitMQ event, consumed here) — this collection covers the remaining REST surface: approve/reject and MercadoPago payment webhooks.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -15,7 +15,7 @@
       "key": "quotationId",
       "value": "",
       "type": "string",
-      "description": "UUID of a quotation — populated automatically by the 'Create Quotation' request via a test script"
+      "description": "UUID of a quotation — set manually (quotations are now created via a RabbitMQ event, not a REST call this collection can trigger)"
     }
   ],
   "item": [
@@ -48,54 +48,6 @@
     {
       "name": "Quotations",
       "item": [
-        {
-          "name": "Create Quotation",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "  const body = pm.response.json();",
-                  "  pm.collectionVariables.set('quotationId', body.id);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{baseUrl}}/quotations",
-              "host": ["{{baseUrl}}"],
-              "path": ["quotations"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"serviceOrderNumber\": 1042,\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "description": "Creates a new quotation with status `pending` and sends a quotation email to the customer via nodemailer.\n\nCalled by `fiap-soat-os-service` when a service order is received with status `Aguardando aprovação`.\n\nOn success the response `id` is stored in the `quotationId` collection variable."
-          },
-          "response": [
-            {
-              "name": "201 Created",
-              "status": "Created",
-              "code": 201,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"id\": \"123e4567-e89b-12d3-a456-426614174002\",\n  \"serviceOrderId\": \"so-123e4567-e89b-12d3-a456-426614174000\",\n  \"serviceOrderNumber\": 1042,\n  \"customerId\": \"cust-123e4567-e89b-12d3-a456-426614174001\",\n  \"customerEmail\": \"customer@example.com\",\n  \"description\": \"Troca de óleo e filtros\",\n  \"amount\": 350.00,\n  \"status\": \"pending\",\n  \"createdAt\": \"2026-07-14T10:00:00.000Z\",\n  \"updatedAt\": \"2026-07-14T10:00:00.000Z\"\n}"
-            },
-            {
-              "name": "400 Bad Request",
-              "status": "Bad Request",
-              "code": 400,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"error\": \"Missing required fields\"\n}"
-            }
-          ]
-        },
         {
           "name": "Approve Quotation",
           "request": {
