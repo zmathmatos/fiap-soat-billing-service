@@ -8,6 +8,9 @@ const mockRepo: jest.Mocked<IQuotationRepository> = {
   findById: jest.fn(),
   findByServiceOrderId: jest.fn(),
   update: jest.fn(),
+  atomicUpdateWithEvent: jest.fn(),
+  findWithPendingEvents: jest.fn(),
+  clearPendingEvent: jest.fn(),
 };
 
 const mockEmail: jest.Mocked<IEmailService> = {

@@ -11,8 +11,6 @@ import { MongoQuotationRepository } from './infrastructure/database/MongoQuotati
 import { MongoPaymentRepository } from './infrastructure/database/MongoPaymentRepository';
 import { NodemailerEmailService } from './infrastructure/email/NodemailerEmailService';
 import { MercadoPagoService } from './infrastructure/payment/MercadoPagoService';
-import { RabbitMQEventPublisher } from './infrastructure/messaging/RabbitMQEventPublisher';
-import { OsServiceClient } from './infrastructure/http/OsServiceClient';
 
 export function createApp(): express.Application {
   const app = express();
@@ -22,8 +20,6 @@ export function createApp(): express.Application {
   const paymentRepository = new MongoPaymentRepository();
   const emailService = new NodemailerEmailService();
   const paymentService = new MercadoPagoService();
-  const eventPublisher = new RabbitMQEventPublisher();
-  const osServiceClient = new OsServiceClient();
 
   const approveQuotationUseCase = new ApproveQuotationUseCase(
     quotationRepository,
@@ -31,15 +27,10 @@ export function createApp(): express.Application {
     emailService,
     paymentService,
   );
-  const rejectQuotationUseCase = new RejectQuotationUseCase(
-    quotationRepository,
-    osServiceClient,
-    eventPublisher,
-  );
+  const rejectQuotationUseCase = new RejectQuotationUseCase(quotationRepository);
   const processPaymentWebhookUseCase = new ProcessPaymentWebhookUseCase(
     paymentRepository,
     paymentService,
-    eventPublisher,
   );
 
   const quotationController = new QuotationController(approveQuotationUseCase, rejectQuotationUseCase);

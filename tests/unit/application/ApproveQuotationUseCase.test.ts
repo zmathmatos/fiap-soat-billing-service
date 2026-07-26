@@ -11,6 +11,9 @@ const mockQuotationRepo: jest.Mocked<IQuotationRepository> = {
   findById: jest.fn(),
   findByServiceOrderId: jest.fn(),
   update: jest.fn(),
+  atomicUpdateWithEvent: jest.fn(),
+  findWithPendingEvents: jest.fn(),
+  clearPendingEvent: jest.fn(),
 };
 
 const mockPaymentRepo: jest.Mocked<IPaymentRepository> = {
@@ -19,6 +22,9 @@ const mockPaymentRepo: jest.Mocked<IPaymentRepository> = {
   findByQuotationId: jest.fn(),
   findByMercadoPagoPaymentId: jest.fn(),
   update: jest.fn(),
+  atomicUpdateWithEvent: jest.fn(),
+  findWithPendingEvents: jest.fn(),
+  clearPendingEvent: jest.fn(),
 };
 
 const mockEmailService: jest.Mocked<IEmailService> = {

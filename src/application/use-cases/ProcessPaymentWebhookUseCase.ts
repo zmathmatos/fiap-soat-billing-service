@@ -1,6 +1,6 @@
+import { randomUUID } from 'crypto';
 import { IPaymentRepository } from '../../domain/repositories/IPaymentRepository';
 import { IPaymentService } from '../services/IPaymentService';
-import { IEventPublisher } from '../services/IEventPublisher';
 import { PaymentWebhookDto } from '../dtos/PaymentWebhookDto';
 import { AppError } from '../../shared/errors/AppError';
 
@@ -8,7 +8,6 @@ export class ProcessPaymentWebhookUseCase {
   constructor(
     private readonly paymentRepository: IPaymentRepository,
     private readonly paymentService: IPaymentService,
-    private readonly eventPublisher: IEventPublisher,
   ) {}
 
   async execute(dto: PaymentWebhookDto): Promise<void> {
@@ -26,21 +25,40 @@ export class ProcessPaymentWebhookUseCase {
 
     if (mpStatus === 'approved') {
       payment.confirm(mpPaymentId, mpPayload);
-      await this.paymentRepository.update(payment);
-
-      await this.eventPublisher.publishPaymentApproved({
-        paymentId: payment.id,
-        serviceOrderId: payment.serviceOrderId,
-        amount: payment.amount,
-      });
+      await this.paymentRepository.atomicUpdateWithEvent(
+        payment.id,
+        {
+          status: payment.status,
+          mercadoPagoPaymentId: payment.mercadoPagoPaymentId,
+          mercadoPagoPayload: payment.mercadoPagoPayload,
+          updatedAt: payment.updatedAt,
+        },
+        {
+          id: randomUUID(),
+          type: 'payment.approved',
+          payload: {
+            paymentId: payment.id,
+            serviceOrderId: payment.serviceOrderId,
+            amount: payment.amount,
+          },
+          createdAt: new Date(),
+        },
+      );
     } else if (mpStatus === 'rejected' || mpStatus === 'cancelled') {
       payment.fail();
-      await this.paymentRepository.update(payment);
-
-      await this.eventPublisher.publishPaymentFailed({
-        paymentId: payment.id,
-        serviceOrderId: payment.serviceOrderId,
-      });
+      await this.paymentRepository.atomicUpdateWithEvent(
+        payment.id,
+        { status: payment.status, updatedAt: payment.updatedAt },
+        {
+          id: randomUUID(),
+          type: 'payment.failed',
+          payload: {
+            paymentId: payment.id,
+            serviceOrderId: payment.serviceOrderId,
+          },
+          createdAt: new Date(),
+        },
+      );
     }
   }
 }

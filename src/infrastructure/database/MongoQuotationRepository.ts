@@ -1,5 +1,6 @@
 import { Quotation } from '../../domain/entities/Quotation';
 import { IQuotationRepository } from '../../domain/repositories/IQuotationRepository';
+import { PendingEvent } from '../../domain/events/PendingEvent';
 import { QuotationModel } from './schemas/QuotationSchema';
 
 export class MongoQuotationRepository implements IQuotationRepository {
@@ -59,6 +60,35 @@ export class MongoQuotationRepository implements IQuotationRepository {
         status: quotation.status,
         updatedAt: quotation.updatedAt,
       },
+    );
+  }
+
+  async atomicUpdateWithEvent(
+    id: string,
+    fields: Record<string, unknown>,
+    event: PendingEvent,
+  ): Promise<void> {
+    await QuotationModel.findOneAndUpdate(
+      { id },
+      {
+        $set: fields,
+        $push: { pendingEvents: event },
+      },
+    );
+  }
+
+  async findWithPendingEvents(): Promise<Array<{ entityId: string; pendingEvents: PendingEvent[] }>> {
+    const docs = await QuotationModel.find({ 'pendingEvents.0': { $exists: true } });
+    return docs.map((doc) => ({
+      entityId: doc.id,
+      pendingEvents: doc.pendingEvents ?? [],
+    }));
+  }
+
+  async clearPendingEvent(entityId: string, eventId: string): Promise<void> {
+    await QuotationModel.findOneAndUpdate(
+      { id: entityId },
+      { $pull: { pendingEvents: { id: eventId } } },
     );
   }
 }

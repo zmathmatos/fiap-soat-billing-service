@@ -1,30 +1,33 @@
+import { randomUUID } from 'crypto';
 import { IQuotationRepository } from '../../domain/repositories/IQuotationRepository';
-import { IOsServiceClient } from '../services/IOsServiceClient';
-import { IEventPublisher } from '../services/IEventPublisher';
 import { AppError } from '../../shared/errors/AppError';
 import { QuotationResponseDto } from '../dtos/QuotationResponseDto';
 
 export class RejectQuotationUseCase {
-  constructor(
-    private readonly quotationRepository: IQuotationRepository,
-    private readonly osServiceClient: IOsServiceClient,
-    private readonly eventPublisher: IEventPublisher,
-  ) {}
+  constructor(private readonly quotationRepository: IQuotationRepository) {}
 
   async execute(quotationId: string): Promise<QuotationResponseDto> {
     const quotation = await this.quotationRepository.findById(quotationId);
     if (!quotation) throw new AppError('Quotation not found', 404);
 
     quotation.reject();
-    await this.quotationRepository.update(quotation);
-
-    await this.osServiceClient.updateStatusToFinished(quotation.serviceOrderId);
-
-    // Saga compensation: the execution-service drops the order from its queues.
-    await this.eventPublisher.publishQuotationRejected({
-      quotationId: quotation.id,
-      serviceOrderId: quotation.serviceOrderId,
-    });
+    // Atomically persist the rejection and schedule the compensation event.
+    // The MongoOutboxPublisher will pick up the pending event and publish
+    // quotation.rejected to RabbitMQ; os-service and execution-service both
+    // consume it to advance their saga compensation paths.
+    await this.quotationRepository.atomicUpdateWithEvent(
+      quotation.id,
+      { status: quotation.status, updatedAt: quotation.updatedAt },
+      {
+        id: randomUUID(),
+        type: 'quotation.rejected',
+        payload: {
+          quotationId: quotation.id,
+          serviceOrderId: quotation.serviceOrderId,
+        },
+        createdAt: new Date(),
+      },
+    );
 
     return {
       id: quotation.id,
