@@ -26,6 +26,7 @@
     "express": "^4.19.2",
     "mercadopago": "^2.0.15",
     "mongoose": "^8.4.4",
+    "newrelic": "^14.3.3",
     "nodemailer": "^6.9.14",
     "uuid": "^10.0.0"
   },
