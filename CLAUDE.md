@@ -49,7 +49,7 @@ The ecosystem uses a **choreographed saga**: no central orchestrator, and each s
 
 1. **Receive service order**: `fiap-soat-os-service` publishes a `quotation.requested` event to the `quotation-events` topic exchange when a service order's status becomes `"Aguardando aprovação"`; this service's `RabbitMQQuotationEventConsumer` consumes it and calls `CreateQuotationUseCase`.
 2. **Generate quotation**: persist quotation to MongoDB and send an email via nodemailer (Mailhog for local dev). Idempotent by `serviceOrderId` — a redelivered `quotation.requested` event for an already-known service order is a no-op (skips both the write and the email) instead of creating a duplicate.
-3. **Quotation rejected**: send the `quotation.rejected` event to `fiap-soat-os-service/` to set status → `"Finalizado"`.
+3. **Quotation rejected**: publish the `quotation.rejected` event to RabbitMQ — `fiap-soat-os-service` consumes it and sets status → `"Finalizado"`. (No synchronous REST call is made; the outbox poller delivers the event at-least-once.)
 4. **Quotation approved**: send payment email to customer; create a Mercado Pago payment preference.
 5. **Payment confirmed** (Mercado Pago webhook): persist the full Mercado Pago payment payload to MongoDB, then publish the `payment.approved` event to RabbitMQ — `fiap-soat-os-service` consumes it and sets status → `"Em execução"`.
 6. **Payment rejected/cancelled**: publish the `payment.failed` event to RabbitMQ — `fiap-soat-os-service` consumes it and sets status → `"Finalizado"`.
@@ -63,7 +63,7 @@ Every published message carries a `messageId`; consumers dedupe on it.`payment.a
 | MongoDB / DocumentDB | Sole database — no other service accesses it | `MONGODB_URI` |
 | Mercado Pago API | Payment preference creation + webhook verification | `MP_ACCESS_TOKEN` |
 | nodemailer + Mailhog | Email sending (quotations, payment links) | `SMTP_HOST`, `SMTP_PORT` |
-| fiap-soat-os-service | Consumes `quotation.requested` (quotation creation, async); update service order status for `quotation.rejected` (sync REST call) | `RABBITMQ_QUOTATION_EXCHANGE`/`RABBITMQ_QUOTATION_QUEUE`; `OS_SERVICE_URL` |
+| fiap-soat-os-service | Consumes `quotation.requested` (quotation creation, async); receives `quotation.rejected` via RabbitMQ (no sync REST call) | `RABBITMQ_QUOTATION_EXCHANGE`/`RABBITMQ_QUOTATION_QUEUE` |
 | RabbitMQ | Publish `payment.approved`/`payment.failed`; consume `quotation.requested` | `RABBITMQ_URL`, exchange/queue names |
 
 Mercado Pago integration docs: https://www.mercadopago.com.br/developers/pt

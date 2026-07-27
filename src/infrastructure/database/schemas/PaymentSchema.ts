@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { PendingEvent } from '../../../domain/events/PendingEvent';
 
 export interface PaymentDocument extends Document {
   id: string;
@@ -10,9 +11,20 @@ export interface PaymentDocument extends Document {
   mercadoPagoPreferenceId?: string;
   mercadoPagoPayload?: Record<string, unknown>;
   status: string;
+  pendingEvents: PendingEvent[];
   createdAt: Date;
   updatedAt: Date;
 }
+
+const pendingEventSchema = new Schema(
+  {
+    id: { type: String, required: true },
+    type: { type: String, required: true },
+    payload: { type: Schema.Types.Mixed, required: true },
+    createdAt: { type: Date, required: true },
+  },
+  { _id: false },
+);
 
 const paymentSchema = new Schema<PaymentDocument>(
   {
@@ -25,6 +37,7 @@ const paymentSchema = new Schema<PaymentDocument>(
     mercadoPagoPreferenceId: { type: String },
     mercadoPagoPayload: { type: Schema.Types.Mixed },
     status: { type: String, required: true, default: 'pending' },
+    pendingEvents: { type: [pendingEventSchema], default: [] },
   },
   { timestamps: true },
 );

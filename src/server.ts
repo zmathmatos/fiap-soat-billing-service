@@ -2,9 +2,12 @@ import { createApp } from './app';
 import { connectDatabase } from './infrastructure/database/connection';
 import { env } from './shared/config/env';
 import { RabbitMQQuotationEventConsumer } from './infrastructure/messaging/RabbitMQQuotationEventConsumer';
+import { MongoOutboxPublisher } from './infrastructure/messaging/MongoOutboxPublisher';
 import { CreateQuotationUseCase } from './application/use-cases/CreateQuotationUseCase';
 import { MongoQuotationRepository } from './infrastructure/database/MongoQuotationRepository';
+import { MongoPaymentRepository } from './infrastructure/database/MongoPaymentRepository';
 import { NodemailerEmailService } from './infrastructure/email/NodemailerEmailService';
+import { RabbitMQEventPublisher } from './infrastructure/messaging/RabbitMQEventPublisher';
 
 const MAX_RETRIES = 10;
 const RETRY_DELAY = 3000;
@@ -44,6 +47,11 @@ async function bootstrap(): Promise<void> {
 
   // Runs in the background — the REST API stays up even if RabbitMQ is unreachable.
   void startQuotationEventConsumer();
+  new MongoOutboxPublisher(
+    new MongoPaymentRepository(),
+    new MongoQuotationRepository(),
+    new RabbitMQEventPublisher(),
+  ).start();
 }
 
 bootstrap().catch(console.error);

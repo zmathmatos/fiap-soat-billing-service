@@ -1,7 +1,6 @@
 import { ProcessPaymentWebhookUseCase } from '../../../src/application/use-cases/ProcessPaymentWebhookUseCase';
 import { IPaymentRepository } from '../../../src/domain/repositories/IPaymentRepository';
 import { IPaymentService } from '../../../src/application/services/IPaymentService';
-import { IEventPublisher } from '../../../src/application/services/IEventPublisher';
 import { Payment } from '../../../src/domain/entities/Payment';
 import { AppError } from '../../../src/shared/errors/AppError';
 
@@ -11,17 +10,14 @@ const mockPaymentRepo: jest.Mocked<IPaymentRepository> = {
   findByQuotationId: jest.fn(),
   findByMercadoPagoPaymentId: jest.fn(),
   update: jest.fn(),
+  atomicUpdateWithEvent: jest.fn(),
+  findWithPendingEvents: jest.fn(),
+  clearPendingEvent: jest.fn(),
 };
 
 const mockPaymentService: jest.Mocked<IPaymentService> = {
   createPreference: jest.fn(),
   getPayment: jest.fn(),
-};
-
-const mockEventPublisher: jest.Mocked<IEventPublisher> = {
-  publishPaymentApproved: jest.fn(),
-  publishPaymentFailed: jest.fn(),
-  publishQuotationRejected: jest.fn(),
 };
 
 const makePayment = () =>
@@ -33,8 +29,7 @@ const makePayment = () =>
     amount: 500,
   });
 
-const makeUseCase = () =>
-  new ProcessPaymentWebhookUseCase(mockPaymentRepo, mockPaymentService, mockEventPublisher);
+const makeUseCase = () => new ProcessPaymentWebhookUseCase(mockPaymentRepo, mockPaymentService);
 
 const webhook = { type: 'payment', data: { id: 'mp-1' } };
 
@@ -45,43 +40,51 @@ describe('ProcessPaymentWebhookUseCase', () => {
     await makeUseCase().execute({ type: 'plan', data: { id: 'mp-1' } });
 
     expect(mockPaymentService.getPayment).not.toHaveBeenCalled();
-    expect(mockEventPublisher.publishPaymentApproved).not.toHaveBeenCalled();
+    expect(mockPaymentRepo.atomicUpdateWithEvent).not.toHaveBeenCalled();
   });
 
-  it('confirms the payment and publishes payment.approved when Mercado Pago approves it', async () => {
+  it('confirms the payment and enqueues payment.approved when Mercado Pago approves it', async () => {
     const payment = makePayment();
     const mpPayload = { status: 'approved', external_reference: 'q-1', id: 'mp-1' };
     mockPaymentService.getPayment.mockResolvedValue(mpPayload);
     mockPaymentRepo.findByQuotationId.mockResolvedValue(payment);
+    mockPaymentRepo.atomicUpdateWithEvent.mockResolvedValue(undefined);
 
     await makeUseCase().execute(webhook);
 
     expect(payment.status).toBe('approved');
     expect(payment.mercadoPagoPayload).toEqual(mpPayload);
-    expect(mockPaymentRepo.update).toHaveBeenCalledWith(payment);
-    expect(mockEventPublisher.publishPaymentApproved).toHaveBeenCalledWith({
-      paymentId: 'p-1',
-      serviceOrderId: 'so-1',
-      amount: 500,
-    });
-    expect(mockEventPublisher.publishPaymentFailed).not.toHaveBeenCalled();
+    expect(mockPaymentRepo.update).not.toHaveBeenCalled();
+    expect(mockPaymentRepo.atomicUpdateWithEvent).toHaveBeenCalledWith(
+      'p-1',
+      expect.objectContaining({ status: 'approved' }),
+      expect.objectContaining({
+        type: 'payment.approved',
+        payload: expect.objectContaining({ paymentId: 'p-1', serviceOrderId: 'so-1', amount: 500 }),
+      }),
+    );
   });
 
   it.each(['rejected', 'cancelled'])(
-    'fails the payment and publishes payment.failed when Mercado Pago returns %s',
+    'fails the payment and enqueues payment.failed when Mercado Pago returns %s',
     async (status) => {
       const payment = makePayment();
       mockPaymentService.getPayment.mockResolvedValue({ status, external_reference: 'q-1' });
       mockPaymentRepo.findByQuotationId.mockResolvedValue(payment);
+      mockPaymentRepo.atomicUpdateWithEvent.mockResolvedValue(undefined);
 
       await makeUseCase().execute(webhook);
 
       expect(payment.status).toBe('failed');
-      expect(mockEventPublisher.publishPaymentFailed).toHaveBeenCalledWith({
-        paymentId: 'p-1',
-        serviceOrderId: 'so-1',
-      });
-      expect(mockEventPublisher.publishPaymentApproved).not.toHaveBeenCalled();
+      expect(mockPaymentRepo.update).not.toHaveBeenCalled();
+      expect(mockPaymentRepo.atomicUpdateWithEvent).toHaveBeenCalledWith(
+        'p-1',
+        expect.objectContaining({ status: 'failed' }),
+        expect.objectContaining({
+          type: 'payment.failed',
+          payload: expect.objectContaining({ paymentId: 'p-1', serviceOrderId: 'so-1' }),
+        }),
+      );
     },
   );
 
@@ -94,8 +97,7 @@ describe('ProcessPaymentWebhookUseCase', () => {
 
     expect(payment.status).toBe('pending');
     expect(mockPaymentRepo.update).not.toHaveBeenCalled();
-    expect(mockEventPublisher.publishPaymentApproved).not.toHaveBeenCalled();
-    expect(mockEventPublisher.publishPaymentFailed).not.toHaveBeenCalled();
+    expect(mockPaymentRepo.atomicUpdateWithEvent).not.toHaveBeenCalled();
   });
 
   it('throws 422 when the Mercado Pago payload has no external_reference', async () => {
@@ -110,6 +112,6 @@ describe('ProcessPaymentWebhookUseCase', () => {
     mockPaymentRepo.findByQuotationId.mockResolvedValue(null);
 
     await expect(makeUseCase().execute(webhook)).rejects.toThrow(AppError);
-    expect(mockEventPublisher.publishPaymentApproved).not.toHaveBeenCalled();
+    expect(mockPaymentRepo.atomicUpdateWithEvent).not.toHaveBeenCalled();
   });
 });
