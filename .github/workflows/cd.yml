@@ -96,7 +96,7 @@ jobs:
 
       - name: Apply ConfigMap
         env:
-          OS_SERVICE_URL: ${{ vars.OS_SERVICE_URL || 'http://fiap-soat-tech-challenge-app' }}
+          OS_SERVICE_URL: ${{ vars.OS_SERVICE_URL || 'http://os-service' }}
           APP_BASE_URL: ${{ vars.APP_BASE_URL || 'http://billing-service' }}
           MP_NOTIFICATION_URL: ${{ vars.MP_NOTIFICATION_URL || '' }}
           SMTP_HOST: ${{ vars.SMTP_HOST || 'mailhog' }}
