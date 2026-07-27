@@ -3,7 +3,7 @@ import { IQuotationRepository } from '../../domain/repositories/IQuotationReposi
 import { IEventPublisher } from '../../application/services/IEventPublisher';
 import { PendingEvent } from '../../domain/events/PendingEvent';
 
-const POLL_INTERVAL_MS = 5000;
+const POLL_INTERVAL_MS = Number(process.env.OUTBOX_POLL_INTERVAL_MS ?? 1000);
 
 export class MongoOutboxPublisher {
   private timer: ReturnType<typeof setTimeout> | null = null;

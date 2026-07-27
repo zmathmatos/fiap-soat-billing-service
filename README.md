@@ -1,5 +1,8 @@
 # FIAP SOAT Tech Challenge - Billing Service
 
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=zmathmatos_fiap-soat-billing-service&metric=alert_status)](https://sonarcloud.io/summary/overall?id=zmathmatos_fiap-soat-billing-service)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=zmathmatos_fiap-soat-billing-service&metric=coverage)](https://sonarcloud.io/component_measures?id=zmathmatos_fiap-soat-billing-service&metric=coverage)
+
 Microsserviço de **Orçamento e Pagamento** da oficina mecânica (Fase 4).
 
 ## Responsabilidades
@@ -41,9 +44,21 @@ Este serviço faz parte de uma arquitetura de microsserviços coordenada via **S
 - **Assíncrona**: criação de orçamento via consumo do evento `quotation.requested` (RabbitMQ) e publicação dos eventos de pagamento (`payment.approved`, `payment.failed`, `quotation.rejected`);
 - **Síncrona**: API REST para aprovação/rejeição de orçamento (`GET /quotations/:id/approve` e `GET /quotations/:id/reject`, acionados por links no e-mail) e webhook do Mercado Pago (`POST /webhooks/mercadopago`).
 
+## Observabilidade
+
+O serviço roda com o agente APM do New Relic carregado antes da aplicação (`node -r newrelic dist/server.js`). A configuração fica em `newrelic.js` e é controlada por variáveis de ambiente, então o agente só sobe quando `NEW_RELIC_ENABLED=true` — em desenvolvimento e nos testes ele fica desligado.
+
+| Variável | Origem | Descrição |
+|---|---|---|
+| `NEW_RELIC_ENABLED` | ConfigMap (CD) | Liga o agente. `true` em produção |
+| `NEW_RELIC_APP_NAME` | Variable do repo | Nome da aplicação no New Relic. Padrão: `fiap-billing-service` |
+| `NEW_RELIC_LICENSE_KEY` | Secret do repo | Chave de licença da conta |
+
+O **distributed tracing** está habilitado nos três microsserviços, o que permite acompanhar uma ordem de serviço atravessando `os-service → execution-service → billing-service` em um único trace, mesmo com os saltos assíncronos via RabbitMQ. O forwarding de logs também está ligado.
+
 ## Stack
 
-Node.js, TypeScript, Express — Clean Architecture (domain / application / infrastructure / interface).
+Node.js, TypeScript, Express, MongoDB (Mongoose), RabbitMQ (amqplib), Mercado Pago, nodemailer, New Relic APM — Clean Architecture (domain / application / infrastructure / interface).
 
 
 ## Rodando localmente com Docker

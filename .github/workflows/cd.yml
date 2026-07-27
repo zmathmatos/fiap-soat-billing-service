@@ -3,7 +3,7 @@ name: CD - Build, Push to ECR and Deploy to EKS
 on:
   push:
     branches:
-      - master
+      - main
     paths-ignore:
       - "**/*.md"
       - "docs/**"
@@ -96,11 +96,12 @@ jobs:
 
       - name: Apply ConfigMap
         env:
-          OS_SERVICE_URL: ${{ vars.OS_SERVICE_URL || 'http://fiap-soat-tech-challenge-app' }}
+          OS_SERVICE_URL: ${{ vars.OS_SERVICE_URL || 'http://os-service' }}
           APP_BASE_URL: ${{ vars.APP_BASE_URL || 'http://billing-service' }}
           MP_NOTIFICATION_URL: ${{ vars.MP_NOTIFICATION_URL || '' }}
           SMTP_HOST: ${{ vars.SMTP_HOST || 'mailhog' }}
           SMTP_PORT: ${{ vars.SMTP_PORT || '1025' }}
+          NEW_RELIC_APP_NAME: ${{ vars.NEW_RELIC_APP_NAME || 'fiap-billing-service' }}
         run: |
           kubectl -n "$K8S_NAMESPACE" create configmap "${APP_NAME}-config" \
             --from-literal=PORT="3001" \
@@ -113,6 +114,13 @@ jobs:
             --from-literal=EMAIL_FROM="billing@fiap-soat.com" \
             --from-literal=RABBITMQ_EXCHANGE="payment-events" \
             --from-literal=RABBITMQ_QUEUE="billing-queue" \
+            --from-literal=NEW_RELIC_ENABLED="true" \
+            --from-literal=NEW_RELIC_APP_NAME="$NEW_RELIC_APP_NAME" \
+            --from-literal=NEW_RELIC_LOG_LEVEL="info" \
+            --from-literal=NEW_RELIC_LOG="stdout" \
+            --from-literal=NEW_RELIC_DISTRIBUTED_TRACING_ENABLED="true" \
+            --from-literal=NEW_RELIC_APPLICATION_LOGGING_ENABLED="true" \
+            --from-literal=NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED="true" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Apply Secret
@@ -120,11 +128,13 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           MP_ACCESS_TOKEN: ${{ secrets.MP_ACCESS_TOKEN }}
           RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
         run: |
           kubectl -n "$K8S_NAMESPACE" create secret generic "${APP_NAME}-secret" \
             --from-literal=MONGODB_URI="$MONGODB_URI" \
             --from-literal=MP_ACCESS_TOKEN="$MP_ACCESS_TOKEN" \
             --from-literal=RABBITMQ_URL="$RABBITMQ_URL" \
+            --from-literal=NEW_RELIC_LICENSE_KEY="$NEW_RELIC_LICENSE_KEY" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Render & apply manifests
