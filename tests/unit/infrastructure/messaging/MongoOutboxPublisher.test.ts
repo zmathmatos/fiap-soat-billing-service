@@ -71,7 +71,7 @@ describe('MongoOutboxPublisher', () => {
 
   it('starts polling on start()', async () => {
     publisher.start();
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(1000);
     await flushMicrotasks();
     expect(paymentRepo.findWithPendingEvents).toHaveBeenCalledTimes(1);
     expect(quotationRepo.findWithPendingEvents).toHaveBeenCalledTimes(1);
@@ -82,7 +82,7 @@ describe('MongoOutboxPublisher', () => {
     paymentRepo.findWithPendingEvents.mockResolvedValueOnce([{ entityId: 'p-1', pendingEvents: [event] }]);
 
     publisher.start();
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(1000);
     await flushMicrotasks();
 
     expect(eventPublisher.publishPaymentApproved).toHaveBeenCalledWith(event.payload);
@@ -94,7 +94,7 @@ describe('MongoOutboxPublisher', () => {
     paymentRepo.findWithPendingEvents.mockResolvedValueOnce([{ entityId: 'p-1', pendingEvents: [event] }]);
 
     publisher.start();
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(1000);
     await flushMicrotasks();
 
     expect(eventPublisher.publishPaymentFailed).toHaveBeenCalledWith(event.payload);
@@ -106,7 +106,7 @@ describe('MongoOutboxPublisher', () => {
     quotationRepo.findWithPendingEvents.mockResolvedValueOnce([{ entityId: 'q-1', pendingEvents: [event] }]);
 
     publisher.start();
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(1000);
     await flushMicrotasks();
 
     expect(eventPublisher.publishQuotationRejected).toHaveBeenCalledWith(event.payload);
@@ -119,7 +119,7 @@ describe('MongoOutboxPublisher', () => {
     eventPublisher.publishPaymentApproved.mockRejectedValueOnce(new Error('broker down'));
 
     publisher.start();
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(1000);
     await flushMicrotasks();
 
     expect(paymentRepo.clearPendingEvent).not.toHaveBeenCalled();
@@ -131,9 +131,9 @@ describe('MongoOutboxPublisher', () => {
       .mockResolvedValue([]);
 
     publisher.start();
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(1000);
     await flushMicrotasks();
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(1000);
     await flushMicrotasks();
 
     expect(paymentRepo.findWithPendingEvents).toHaveBeenCalledTimes(2);
@@ -142,7 +142,7 @@ describe('MongoOutboxPublisher', () => {
   it('stops polling after stop()', async () => {
     publisher.start();
     publisher.stop();
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(1000);
     await flushMicrotasks();
 
     expect(paymentRepo.findWithPendingEvents).not.toHaveBeenCalled();
