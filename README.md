@@ -24,6 +24,8 @@ Este serviço consome o evento `quotation.requested` do exchange `quotation-even
 
 ## Arquitetura
 
+> Diagrama de componentes (Clean Architecture) deste serviço: [`docs/architecture.mmd`](docs/architecture.mmd).
+
 Este serviço faz parte de uma arquitetura de microsserviços coordenada via **Saga Pattern coreografada (Choreography)**: não há um orquestrador central — cada serviço publica e consome eventos de domínio via RabbitMQ e reage a eles de forma autônoma para dar continuidade ao fluxo da saga.
 
 | Repositório | Conteúdo |

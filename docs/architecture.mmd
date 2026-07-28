@@ -1,0 +1,57 @@
+---
+config:
+  layout: dagre
+---
+flowchart TB
+    subgraph Domain["Domain Layer"]
+        QUOT["Quotation (entity)"]
+        PAY["Payment (entity)"]
+        EVT["Domain / Pending Events"]
+        REPO_INT["Repository Interfaces"]
+    end
+    subgraph Application["Application Layer"]
+        UC_CREATE["CreateQuotationUseCase"]
+        UC_APPROVE["ApproveQuotationUseCase"]
+        UC_REJECT["RejectQuotationUseCase"]
+        UC_WEBHOOK["ProcessPaymentWebhookUseCase"]
+        SVC_INT["Service Interfaces<br/>(Email, Payment, EventPublisher)"]
+    end
+    subgraph Interface["Interface Layer"]
+        CTRL["Quotation / Payment Controllers"]
+        WEBHOOK["Mercado Pago Webhook Handler"]
+        CONSUMER["RabbitMQ quotation.requested Consumer"]
+    end
+    subgraph Infrastructure["Infrastructure Layer"]
+        REPO_IMPL["Mongo Repositories"]
+        MONGO[("MongoDB<br/>database: billing")]
+        MP_CLIENT["Mercado Pago Client"]
+        MAILER["nodemailer / Mailhog"]
+        OUTBOX["Mongo Outbox Publisher"]
+        RABBIT{{"RabbitMQ<br/>payment-events"}}
+    end
+
+    CONSUMER --> UC_CREATE
+    WEBHOOK --> UC_WEBHOOK
+    CTRL --> UC_APPROVE
+    CTRL --> UC_REJECT
+
+    UC_CREATE --> QUOT
+    UC_APPROVE --> QUOT
+    UC_APPROVE --> PAY
+    UC_REJECT --> EVT
+    UC_WEBHOOK --> PAY
+    UC_WEBHOOK --> EVT
+
+    UC_CREATE --> REPO_INT
+    UC_APPROVE --> SVC_INT
+    REPO_INT -. implemented by .-> REPO_IMPL
+    SVC_INT -. implemented by .-> MP_CLIENT
+    SVC_INT -. implemented by .-> MAILER
+    REPO_IMPL --> MONGO
+    OUTBOX --> RABBIT
+    REPO_IMPL -. pending events .-> OUTBOX
+
+    style Domain fill:#e1f5fe
+    style Application fill:#fff3e0
+    style Infrastructure fill:#f3e5f5
+    style Interface fill:#e8f5e9
